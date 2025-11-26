@@ -24,6 +24,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# GitHub
+.github/
+
 # Backend - Maven
 target/
 pom.xml.tag
