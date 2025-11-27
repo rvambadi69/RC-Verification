@@ -11,7 +11,6 @@ import com.vehicle.SmartVehicle.model.User;
 import com.vehicle.SmartVehicle.model.Vehicle;
 import com.vehicle.SmartVehicle.model.Verification;
 import com.vehicle.SmartVehicle.repository.FraudFlagRepository;
-import com.vehicle.SmartVehicle.repository.FraudFlagRepository;
 import com.vehicle.SmartVehicle.repository.UserRepository;
 import com.vehicle.SmartVehicle.repository.VehicleRepository;
 import com.vehicle.SmartVehicle.repository.VerificationRepository;

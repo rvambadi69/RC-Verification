@@ -20,33 +20,24 @@ public interface VehicleRepository extends MongoRepository<Vehicle, String> {
     
     long countByEngineNumber(String engineNumber);
     
-    List<Vehicle> findByStatus(String status);
-    
-    List<Vehicle> findByIsActive(boolean isActive);
-    
-    @Query("{ 'isActive': true, 'deletedAt': null }")
+    @Query("{ 'registrationInfo.active': true, 'deletedAt': null }")
     List<Vehicle> findAllActive();
     
-    @Query("{ 'owner.name': { $regex: ?0, $options: 'i' }, 'isActive': true }")
+    @Query("{ 'owner.name': { $regex: ?0, $options: 'i' }, 'deletedAt': null }")
     List<Vehicle> searchByOwnerName(String ownerName);
     
-    @Query("{ 'registrationState': ?0, 'isActive': true }")
+    @Query("{ 'registrationState': ?0, 'deletedAt': null }")
     List<Vehicle> findByRegisteredState(String state);
     
-    @Query("{ 'registrationInfo.validTill': { $gte: ?0 }, 'isActive': true }")
-    List<Vehicle> findByStatusAndCreatedAfter(String status, LocalDateTime date);
-    
-    @Query("{ 'createdAt': { $gte: ?0, $lte: ?1 }, 'isActive': true }")
+    @Query("{ 'createdAt': { $gte: ?0, $lte: ?1 }, 'deletedAt': null }")
     List<Vehicle> findByCreatedDateBetween(LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query("{ 'insurance.validTill': { $lt: new Date() }, 'isActive': true }")
+    @Query("{ 'insurance.validTill': { $lt: new Date() }, 'deletedAt': null }")
     List<Vehicle> findWithExpiredInsurance();
     
-    @Query("{ 'puc.validTill': { $lt: new Date() }, 'isActive': true }")
+    @Query("{ 'puc.validTill': { $lt: new Date() }, 'deletedAt': null }")
     List<Vehicle> findWithExpiredPuc();
     
-    @Query("{ 'rcNumber': { $regex: ?0, $options: 'i' }, 'isActive': true }")
+    @Query("{ 'rcNumber': { $regex: ?0, $options: 'i' }, 'deletedAt': null }")
     Page<Vehicle> searchByRcNumber(String rcNumber, Pageable pageable);
-    
-    Page<Vehicle> findByStatusAndIsActive(String status, boolean isActive, Pageable pageable);
 }
