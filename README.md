@@ -1,73 +1,214 @@
-# Welcome to your Lovable project
+# RC Shield - Vehicle Registration Verification & Fraud Detection System
 
-## Project info
+A comprehensive full-stack application for verifying vehicle registration certificates (RC), detecting fraudulent registrations, and managing vehicle data efficiently.
 
-**URL**: https://lovable.dev/projects/27a2373b-4303-4ebe-9142-17cd8809a684
+## 🎯 Features
 
-## How can I edit this code?
+- **Vehicle Verification**: Search vehicles by RC number and verify registration
+- **Fraud Detection**: Automated fraud scoring with multiple detection mechanisms
+- **QR Code Scanning**: Quick verification via QR codes
+- **Role-Based Access Control**: Different permissions for buyers, police, and RTO admins
+- **Audit Trail**: Complete verification history with IP tracking and location logging
+- **Real-Time Validation**: Insurance and PUC validity checking
 
-There are several ways of editing your application.
+## 🏗️ Architecture
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/27a2373b-4303-4ebe-9142-17cd8809a684) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+┌─────────────────────┐
+│  Frontend (React)   │  Port 5173
+│  Vite + TypeScript  │
+└──────────┬──────────┘
+           │ REST API
+┌──────────▼──────────┐
+│ Backend (Spring)    │  Port 8081
+│ Boot + Java 21      │
+└──────────┬──────────┘
+           │
+┌──────────▼──────────┐
+│ MongoDB Atlas       │
+└─────────────────────┘
 ```
 
-**Edit a file directly in GitHub**
+## 📦 Tech Stack
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Frontend
+- **Framework**: React 18 + TypeScript
+- **Bundler**: Vite 5.4
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State**: React Query + React Router
+- **Validation**: Zod
 
-**Use GitHub Codespaces**
+### Backend
+- **Framework**: Spring Boot 4.0
+- **Language**: Java 21
+- **Database**: MongoDB Atlas
+- **Authentication**: JWT (JJWT 0.12.3)
+- **Build**: Maven 3.9+
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🚀 Quick Start
 
-## What technologies are used for this project?
+### Prerequisites
+- Node.js 16+ (frontend)
+- Java 21 (backend)
+- MongoDB Atlas account
+- Git
 
-This project is built with:
+### Frontend Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+cd frontend
 
-## How can I deploy this project?
+# Install dependencies
+npm install
 
-Simply open [Lovable](https://lovable.dev/projects/27a2373b-4303-4ebe-9142-17cd8809a684) and click on Share -> Publish.
+# Start dev server (http://localhost:5173)
+npm run dev
 
-## Can I connect a custom domain to my Lovable project?
+# Build for production
+npm run build
+```
 
-Yes, you can!
+### Backend Setup
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```bash
+cd backend/SmartVehicle
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Install dependencies
+mvn clean install
+
+# Create .env file
+cp .env.example .env
+# Edit .env with your MongoDB URI and JWT secret
+
+# Run the application (http://localhost:8081)
+mvn spring-boot:run
+```
+
+## 🔐 Environment Variables
+
+Create a `.env` file in the backend directory:
+
+```env
+MONGODB_URI=mongodb+srv://<USERNAME>:<PASSWORD>@cluster.mongodb.net/rc_shield
+JWT_SECRET=<your-256-bit-secret-key-minimum-64-characters>
+JWT_EXPIRATION=604800000
+```
+
+## 📁 Project Structure
+
+```
+rc-shield-main/
+├── frontend/                 # React frontend
+│   ├── src/
+│   │   ├── pages/           # Page components
+│   │   ├── components/      # Reusable components
+│   │   ├── lib/             # API client & utilities
+│   │   └── hooks/           # Custom React hooks
+│   └── package.json
+│
+├── backend/                 # Spring Boot backend
+│   └── SmartVehicle/
+│       ├── src/main/java/com/vehicle/SmartVehicle/
+│       │   ├── model/       # Entity classes
+│       │   ├── repository/  # Data access
+│       │   ├── service/     # Business logic
+│       │   ├── controller/  # API endpoints
+│       │   ├── dto/         # Data transfer objects
+│       │   ├── util/        # Utilities (JWT)
+│       │   └── config/      # Configuration
+│       └── pom.xml
+│
+└── README.md
+```
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/signin` - Login user
+- `POST /api/auth/logout` - Logout user
+
+### Vehicles
+- `GET /api/vehicles/search?rcNumber=AP01AB1234` - Search vehicle
+- `POST /api/vehicles/fraud-check` - Check fraud for vehicle
+- `GET /api/vehicles` - List all vehicles
+
+## 📊 Database Collections
+
+- **users**: User accounts with roles
+- **vehicles**: Vehicle registration records
+- **fraud_flags**: Fraud detection results
+- **verifications**: Verification audit trail
+
+## 🔐 Authentication Flow
+
+1. User signs up/in via `/api/auth/signin`
+2. Backend returns JWT token + user data
+3. Frontend stores token in localStorage
+4. Protected API calls include `Authorization: Bearer {token}`
+
+## 👥 User Roles
+
+| Role | Access |
+|------|--------|
+| public | View own verifications |
+| buyer | Verify vehicles, view history |
+| police | Full access + fraud reporting |
+| rto_admin | Complete system management |
+
+## 🧪 Sample Data
+
+The application automatically loads sample data on first startup:
+- 3 test users (buyer, police, rto_admin)
+- 2 test vehicles with complete details
+- Sample fraud flags and verifications
+
+## 📝 Configuration
+
+### Backend Configuration (application.properties)
+```properties
+server.port=8081
+spring.data.mongodb.uri=${MONGODB_URI}
+spring.data.mongodb.auto-index-creation=true
+jwt.secret=${JWT_SECRET}
+jwt.expiration=${JWT_EXPIRATION}
+```
+
+### Frontend Configuration (vite.config.ts)
+API base URL is configured in `src/lib/api.ts`:
+```typescript
+const API_BASE_URL = "http://localhost:8081";
+```
+
+## 🐛 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| MongoDB connection failed | Check .env MONGODB_URI and IP whitelist in Atlas |
+| JWT token expired | Clear localStorage and re-login |
+| API 404 errors | Verify backend is running on port 8081 |
+| CORS errors | Check CORS configuration in Spring Security |
+| Port already in use | Change port in application.properties |
+
+## 📚 Documentation
+
+See [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for detailed documentation on:
+- Complete architecture overview
+- Database schema design
+- API endpoint documentation
+- Development workflows
+- Deployment instructions
+
+## 📄 License
+
+This project is part of an academic database course.
+
+## 👨‍💻 Development
+
+Built with modern full-stack technologies emphasizing:
+- Clean code architecture
+- Type safety (TypeScript, Java)
+- Database normalization (BCNF)
+- Security best practices (JWT, password hashing)
+- RESTful API design
+

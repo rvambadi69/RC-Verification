@@ -1,13 +1,13 @@
-package com.vehicle.SmartVehicle;
+package com.SmartVehicle.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SmartVehicleApplication {
+public class BackendApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SmartVehicleApplication.class, args);
+		SpringApplication.run(BackendApplication.class, args);
 	}
 
 }

@@ -17,46 +17,6 @@ async function handleResponse(response: Response) {
 }
 
 export const apiClient = {
-  // Auth endpoints
-  auth: {
-    signUp: async (email: string, password: string, fullName: string) => {
-      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullName }),
-      });
-      return handleResponse(response);
-    },
-
-    signIn: async (email: string, password: string) => {
-      const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      return handleResponse(response);
-    },
-
-    logout: async () => {
-      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      return handleResponse(response);
-    },
-
-    getCurrentUser: async (token: string) => {
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      return handleResponse(response);
-    },
-  },
-
   // Vehicle endpoints
   vehicles: {
     search: async (rcNumber: string) => {

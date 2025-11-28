@@ -14,7 +14,7 @@ const Index = () => {
             <Shield className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">RC Verification</span>
           </div>
-          <Button onClick={() => navigate("/auth")}>
+          <Button onClick={() => navigate("/dashboard")}>
             Get Started
           </Button>
         </div>
@@ -36,12 +36,9 @@ const Index = () => {
             Instantly verify vehicle Registration Certificates, detect fraud patterns, and ensure authenticity with our intelligent verification system.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button size="lg" className="text-lg" onClick={() => navigate("/auth")}>
+            <Button size="lg" className="text-lg" onClick={() => navigate("/dashboard")}>
               <Shield className="mr-2 h-5 w-5" />
               Start Verification
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg" onClick={() => navigate("/auth")}>
-              Sign In
             </Button>
           </div>
         </div>
@@ -110,11 +107,11 @@ const Index = () => {
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <h2 className="text-4xl font-bold">Ready to Get Started?</h2>
           <p className="text-xl text-muted-foreground">
-            Join the fight against RC fraud. Sign up now and start verifying vehicle registrations securely.
+            Access the dashboard to start verifying vehicle registrations securely.
           </p>
-          <Button size="lg" className="text-lg" onClick={() => navigate("/auth")}>
+          <Button size="lg" className="text-lg" onClick={() => navigate("/dashboard")}>
             <Shield className="mr-2 h-5 w-5" />
-            Create Free Account
+            Go to Dashboard
           </Button>
         </div>
       </section>

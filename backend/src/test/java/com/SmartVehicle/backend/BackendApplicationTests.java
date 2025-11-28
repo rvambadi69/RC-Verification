@@ -1,10 +1,10 @@
-package com.vehicle.SmartVehicle;
+package com.SmartVehicle.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SmartVehicleApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
