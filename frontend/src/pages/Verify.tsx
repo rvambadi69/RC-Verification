@@ -74,13 +74,13 @@ const Verify = () => {
         id: rc.id,
         rcNumber: rc.rcNumber,
         ownerName: rc.owner?.name || "N/A",
-        chassisNumber: rc.vehicleInfo?.chassisNumber || "N/A",
-        engineNumber: rc.vehicleInfo?.engineNumber || "N/A",
+        chassisNumber: rc.chassisNumber || rc.vehicleInfo?.chassisNumber || "N/A",
+        engineNumber: rc.engineNumber || rc.vehicleInfo?.engineNumber || "N/A",
         vehicleMake: rc.vehicleInfo?.make || "N/A",
         vehicleModel: rc.vehicleInfo?.model || "N/A",
         vehicleYear: rc.vehicleInfo?.manufactureYear ?? "N/A",
         registrationDate: rc.registrationInfo?.registrationDate || null,
-        registeredState: rc.vehicleInfo?.registrationState || "N/A",
+        registeredState: rc.registrationState || rc.vehicleInfo?.registrationState || "N/A",
         status: rc.registrationInfo?.active ? "active" : "inactive",
         insuranceValidUntil: rc.insurance?.validTill || null,
         pucValidUntil: rc.puc?.validTill || null,
@@ -88,9 +88,18 @@ const Verify = () => {
 
       setVehicleData(mapped);
 
-      // Backend has no fraud-check endpoint; show as clean by default
-      setFraudChecks([]);
-      setFraudScore(0);
+      // Fraud logic: treat stolen or suspicious as fraud indicators
+      const isStolen = !!rc.stolen;
+      const isSuspicious = !!rc.suspicious;
+      const checks: FraudCheck[] = [];
+      if (isStolen) {
+        checks.push({ type: "Stolen Vehicle", message: "This RC is marked as stolen.", severity: "high" });
+      }
+      if (isSuspicious) {
+        checks.push({ type: "Suspicious Activity", message: "This RC has suspicious flags.", severity: isStolen ? "high" : "medium" });
+      }
+      setFraudChecks(checks);
+      setFraudScore(checks.length ? (isStolen ? 1 : 0.6) : 0);
 
       toast.success("Verification complete");
     } catch (error: any) {

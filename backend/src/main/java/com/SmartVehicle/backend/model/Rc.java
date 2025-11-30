@@ -13,7 +13,6 @@ public class Rc {
     private String id;
 
     private String rcNumber;
-    private String qrCodeId;
     private int ownersCount;
     private List<String> previousOwners;
 
@@ -39,8 +38,6 @@ public class Rc {
     public String getRcNumber() { return rcNumber; }
     public void setRcNumber(String rcNumber) { this.rcNumber = rcNumber; }
 
-    public String getQrCodeId() { return qrCodeId; }
-    public void setQrCodeId(String qrCodeId) { this.qrCodeId = qrCodeId; }
 
     public int getOwnersCount() { return ownersCount; }
     public void setOwnersCount(int ownersCount) { this.ownersCount = ownersCount; }
