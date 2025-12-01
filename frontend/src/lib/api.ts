@@ -1,5 +1,5 @@
 // API client for Spring Boot backend
-const API_BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = "http://localhost:8080";
 
 async function handleResponse(response: Response) {
   const text = await response.text();
@@ -17,6 +17,7 @@ async function handleResponse(response: Response) {
 }
 
 export const apiClient = {
+  baseUrl: API_BASE_URL,
   // Placeholder auth methods (backend auth not present in this module)
   auth: {
     signUp: async (_email: string, _password: string, _fullName: string) => {
@@ -72,6 +73,14 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
         }
       );
+      return handleResponse(response);
+    },
+
+    getHistory: async (id: string) => {
+      const response = await fetch(`${API_BASE_URL}/api/rc/${id}/history`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      });
       return handleResponse(response);
     },
 

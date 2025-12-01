@@ -12,6 +12,9 @@ import com.SmartVehicle.backend.model.Rc;
 import com.SmartVehicle.backend.model.OwnershipHistory;
 import com.SmartVehicle.backend.repository.OwnershipHistoryRepository;
 import com.SmartVehicle.backend.repository.RcRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+@SuppressWarnings("unused")
 
 @Service
 public class RcServiceImpl implements RcService {
@@ -24,13 +27,17 @@ public class RcServiceImpl implements RcService {
     private final Counter rcSearchCounter;
 
     @Autowired
-    public RcServiceImpl(RcRepository repo, OwnershipHistoryRepository ownershipHistoryRepository, MeterRegistry meterRegistry) {
+    private final EmailService emailService;
+
+    @Autowired
+    public RcServiceImpl(RcRepository repo, OwnershipHistoryRepository ownershipHistoryRepository, MeterRegistry meterRegistry, EmailService emailService) {
         this.repo = repo;
         this.ownershipHistoryRepository = ownershipHistoryRepository;
         this.rcCreateCounter = meterRegistry.counter("rc_operations_total", "operation", "create");
         this.rcUpdateCounter = meterRegistry.counter("rc_operations_total", "operation", "update");
         this.rcDeleteCounter = meterRegistry.counter("rc_operations_total", "operation", "delete");
         this.rcSearchCounter = meterRegistry.counter("rc_operations_total", "operation", "search");
+        this.emailService = emailService;
     }
 
     @Override
@@ -58,6 +65,13 @@ public class RcServiceImpl implements RcService {
         rc.setUpdatedAt(Instant.now());
         Rc saved = repo.save(rc);
         rcCreateCounter.increment();
+        if (saved.getOwner() != null && saved.getOwner().getEmail() != null) {
+            emailService.sendRcCreatedEmail(
+                    saved.getOwner().getEmail(),
+                    saved.getOwner().getName(),
+                    saved.getRcNumber()
+            );
+        }
         return saved;
     }
 
@@ -84,6 +98,13 @@ public class RcServiceImpl implements RcService {
                 h.setStolenAtTransfer(saved.getStolen());
                 h.setSuspiciousAtTransfer(saved.getSuspicious());
                 ownershipHistoryRepository.save(h);
+                if (saved.getOwner() != null && saved.getOwner().getEmail() != null) {
+                    emailService.sendOwnershipTransferEmail(
+                            saved.getOwner().getEmail(),
+                            saved.getOwner().getName(),
+                            saved.getRcNumber()
+                    );
+                }
             }
         }
         return saved;

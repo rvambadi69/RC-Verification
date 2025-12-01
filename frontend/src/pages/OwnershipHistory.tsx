@@ -28,9 +28,7 @@ const OwnershipHistory = () => {
       if (!id) return;
       try {
         setLoading(true);
-        const res = await fetch(`${apiClient.baseUrl}/api/rc/${id}/history`);
-        if (!res.ok) throw new Error(`Failed: ${res.status}`);
-        const data = await res.json();
+        const data = await apiClient.rc.getHistory(id);
         setEntries(Array.isArray(data) ? data : []);
       } catch (err: unknown) {
         const message = err && typeof err === "object" && "message" in err ? String((err as { message?: string }).message) : "Load failed";

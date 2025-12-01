@@ -1,214 +1,82 @@
-# RC Shield - Vehicle Registration Verification & Fraud Detection System
+# RC Verification — Project Overview
 
-A comprehensive full-stack application for verifying vehicle registration certificates (RC), detecting fraudulent registrations, and managing vehicle data efficiently.
+RC Verification is a full-stack application for searching, managing, and analyzing vehicle Registration Certificates (RCs). It has a React (Vite + TypeScript) frontend and a Spring Boot backend with MongoDB Atlas for persistence. Public users can search RCs; privileged admin actions require an admin key header.
 
-## 🎯 Features
+## How It Works
 
-- **Vehicle Verification**: Search vehicles by RC number and verify registration
-- **Fraud Detection**: Automated fraud scoring with multiple detection mechanisms
-- **QR Code Scanning**: Quick verification via QR codes
-- **Role-Based Access Control**: Different permissions for buyers, police, and RTO admins
-- **Audit Trail**: Complete verification history with IP tracking and location logging
-- **Real-Time Validation**: Insurance and PUC validity checking
+- Frontend (Vite + React 18 + TS)
+    - Routes in `frontend/src/App.tsx` with pages: `Index`, `Verify`, `Vehicles`, `RcDetail`, `TransferOwnership`, `Analytics`, `AdminUsers`, `NotFound`.
+    - Central API client in `frontend/src/lib/api.ts` targets `http://localhost:8080` and uses `X-ADMIN-KEY` for admin mutations.
+    - Zod validation in `frontend/src/lib/validation.ts` enforces form inputs for vehicle creation and ownership transfer.
+    - UI built with shadcn/ui components in `frontend/src/components/ui/*` and TailwindCSS.
 
-## 🏗️ Architecture
+- Backend (Spring Boot 4.x + Java 21)
+    - Entrypoint: `backend/src/main/java/com/SmartVehicle/backend/BackendApplication.java`.
+    - MVC packages: `controller/`, `service/`, `repository/`, `model/`, `config/` under `com.SmartVehicle.backend`.
+    - MongoDB Atlas configured in `backend/src/main/resources/application.properties` using `spring.mongodb.uri` and `spring.mongodb.database`.
+    - Admin key requirement via header `X-ADMIN-KEY` checked by `config/AdminKeyValidator` (used in controller admin endpoints).
+    - Data model: `Rc` document with root fields (`rcNumber`, `ownersCount`, `previousOwners`, `owner`, `vehicleInfo`, `registrationInfo`, `insurance`, `puc`, `chassisNumber`, `engineNumber`, `registrationState`, `stolen`, `suspicious`, `createdAt`, `updatedAt`). Unique index on `rcNumber` prevents duplicates.
+    - Service validations: `RcServiceImpl` enforces required fields and recomputes `ownersCount = 1 + previousOwners.size()` on add/update.
+    - Ownership history: `OwnershipHistory` collection records name changes on transfers; endpoint `GET /api/rc/{id}/history` returns timeline.
+    - Metrics: Actuator + Micrometer Prometheus expose `/actuator/prometheus`; custom counters track RC operations.
 
-```
-┌─────────────────────┐
-│  Frontend (React)   │  Port 5173
-│  Vite + TypeScript  │
-└──────────┬──────────┘
-           │ REST API
-┌──────────▼──────────┐
-│ Backend (Spring)    │  Port 8081
-│ Boot + Java 21      │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ MongoDB Atlas       │
-└─────────────────────┘
-```
+## API Surface
 
-## 📦 Tech Stack
+- Public
+    - `GET /api/rc` — list all RCs
+    - `GET /api/rc/{id}` — get by id
+    - `GET /api/rc/search?rcNumber=...` — search by number
+    - `GET /api/rc/stats` — aggregate stats
+    - `GET /api/rc/page?page=&size=&registrationState=&stolen=&suspicious=&make=&ownerName=` — filtered pagination
 
-### Frontend
-- **Framework**: React 18 + TypeScript
-- **Bundler**: Vite 5.4
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State**: React Query + React Router
-- **Validation**: Zod
+- Admin (requires header `X-ADMIN-KEY`)
+    - `POST /api/rc` — create RC
+    - `PUT /api/rc/{id}` — update RC (records ownership history if owner name changes)
+    - `DELETE /api/rc/{id}` — delete RC
 
-### Backend
-- **Framework**: Spring Boot 4.0
-- **Language**: Java 21
-- **Database**: MongoDB Atlas
-- **Authentication**: JWT (JJWT 0.12.3)
-- **Build**: Maven 3.9+
+## Key Flows
 
-## 🚀 Quick Start
+- Verify RC: User enters RC number; frontend calls `/api/rc/search`; result shows owner/vehicle details and fraud flags.
+- Add Vehicle (Admin): Form in `Vehicles` uses Zod to validate; submits to `POST /api/rc` with `X-ADMIN-KEY`.
+- Transfer Ownership (Admin): Page loads RC by number, warns if stolen/suspicious using `AlertDialog`, validates with Zod, updates owner via `PUT /api/rc/{id}`. History is appended in `OwnershipHistory`.
+- Analytics: Frontend charts consume `/api/rc/stats` to show totals, fraud counts, by-state distribution, and monthly verification trends.
+- Pagination & Filters: `Vehicles` page queries `/api/rc/page` with filters for state, make, owner name, stolen, suspicious, and navigates pages.
 
-### Prerequisites
-- Node.js 16+ (frontend)
-- Java 21 (backend)
-- MongoDB Atlas account
-- Git
+## Development
 
-### Frontend Setup
+Frontend:
 
-```bash
-cd frontend
-
-# Install dependencies
+```powershell
+Push-Location "c:\Users\rohit\OneDrive\Desktop\study\projects\rc-shield-main\frontend"
 npm install
-
-# Start dev server (http://localhost:5173)
 npm run dev
-
-# Build for production
-npm run build
+Pop-Location
 ```
 
-### Backend Setup
+Backend:
 
-```bash
-cd backend/SmartVehicle
-
-# Install dependencies
-mvn clean install
-
-# Create .env file
-cp .env.example .env
-# Edit .env with your MongoDB URI and JWT secret
-
-# Run the application (http://localhost:8081)
-mvn spring-boot:run
+```powershell
+Push-Location "c:\Users\rohit\OneDrive\Desktop\study\projects\rc-shield-main\backend"
+./mvnw clean install
+./mvnw spring-boot:run
+Pop-Location
 ```
 
-## 🔐 Environment Variables
+Backend runs on `http://localhost:8080`. Prometheus metrics at `http://localhost:8080/actuator/prometheus`.
 
-Create a `.env` file in the backend directory:
+## Configuration
 
-```env
-MONGODB_URI=mongodb+srv://<USERNAME>:<PASSWORD>@cluster.mongodb.net/rc_shield
-JWT_SECRET=<your-256-bit-secret-key-minimum-64-characters>
-JWT_EXPIRATION=604800000
-```
+`backend/src/main/resources/application.properties`:
+- `server.port=8080`
+- `spring.mongodb.uri=<Atlas connection>`
+- `spring.mongodb.database=vehicledb`
+- `spring.mongodb.auto-index-creation=true`
+- `admin.secret.key=<your_admin_key>`
+- `management.endpoints.web.exposure.include=health,info,prometheus`
 
-## 📁 Project Structure
+## Notes
 
-```
-rc-shield-main/
-├── frontend/                 # React frontend
-│   ├── src/
-│   │   ├── pages/           # Page components
-│   │   ├── components/      # Reusable components
-│   │   ├── lib/             # API client & utilities
-│   │   └── hooks/           # Custom React hooks
-│   └── package.json
-│
-├── backend/                 # Spring Boot backend
-│   └── SmartVehicle/
-│       ├── src/main/java/com/vehicle/SmartVehicle/
-│       │   ├── model/       # Entity classes
-│       │   ├── repository/  # Data access
-│       │   ├── service/     # Business logic
-│       │   ├── controller/  # API endpoints
-│       │   ├── dto/         # Data transfer objects
-│       │   ├── util/        # Utilities (JWT)
-│       │   └── config/      # Configuration
-│       └── pom.xml
-│
-└── README.md
-```
-
-## 🔌 API Endpoints
-
-### Authentication
-- `POST /api/auth/signup` - Register new user
-- `POST /api/auth/signin` - Login user
-- `POST /api/auth/logout` - Logout user
-
-### Vehicles
-- `GET /api/vehicles/search?rcNumber=AP01AB1234` - Search vehicle
-- `POST /api/vehicles/fraud-check` - Check fraud for vehicle
-- `GET /api/vehicles` - List all vehicles
-
-## 📊 Database Collections
-
-- **users**: User accounts with roles
-- **vehicles**: Vehicle registration records
-- **fraud_flags**: Fraud detection results
-- **verifications**: Verification audit trail
-
-## 🔐 Authentication Flow
-
-1. User signs up/in via `/api/auth/signin`
-2. Backend returns JWT token + user data
-3. Frontend stores token in localStorage
-4. Protected API calls include `Authorization: Bearer {token}`
-
-## 👥 User Roles
-
-| Role | Access |
-|------|--------|
-| public | View own verifications |
-| buyer | Verify vehicles, view history |
-| police | Full access + fraud reporting |
-| rto_admin | Complete system management |
-
-## 🧪 Sample Data
-
-The application automatically loads sample data on first startup:
-- 3 test users (buyer, police, rto_admin)
-- 2 test vehicles with complete details
-- Sample fraud flags and verifications
-
-## 📝 Configuration
-
-### Backend Configuration (application.properties)
-```properties
-server.port=8081
-spring.data.mongodb.uri=${MONGODB_URI}
-spring.data.mongodb.auto-index-creation=true
-jwt.secret=${JWT_SECRET}
-jwt.expiration=${JWT_EXPIRATION}
-```
-
-### Frontend Configuration (vite.config.ts)
-API base URL is configured in `src/lib/api.ts`:
-```typescript
-const API_BASE_URL = "http://localhost:8081";
-```
-
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| MongoDB connection failed | Check .env MONGODB_URI and IP whitelist in Atlas |
-| JWT token expired | Clear localStorage and re-login |
-| API 404 errors | Verify backend is running on port 8081 |
-| CORS errors | Check CORS configuration in Spring Security |
-| Port already in use | Change port in application.properties |
-
-## 📚 Documentation
-
-See [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for detailed documentation on:
-- Complete architecture overview
-- Database schema design
-- API endpoint documentation
-- Development workflows
-- Deployment instructions
-
-## 📄 License
-
-This project is part of an academic database course.
-
-## 👨‍💻 Development
-
-Built with modern full-stack technologies emphasizing:
-- Clean code architecture
-- Type safety (TypeScript, Java)
-- Database normalization (BCNF)
-- Security best practices (JWT, password hashing)
-- RESTful API design
+- Do not edit shadcn-generated primitives in `components/ui/*`.
+- Admin operations require `X-ADMIN-KEY` header.
+- Owners count is derived on server; frontend value is normalized before save.
 
