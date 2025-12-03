@@ -1,189 +1,94 @@
-# RC Shield - AI Coding Agent Instructions
+# RC Verification — AI Coding Agent Instructions
 
 ## Project Overview
-RC Shield is a **vehicle registration verification and fraud detection system** with a React frontend and Spring Boot backend. Users verify vehicle registration certificates (RC), detect fraud through vehicle searches, and RTO/police admins manage registrations with role-based access.
+RC Verification is a vehicle RC search, listing, and admin management system with a React frontend and a Spring Boot backend. Data is stored in MongoDB Atlas. Public users can search RCs; admin operations require an admin key via request header.
 
 **Frontend Stack:** Vite + React 18 + TypeScript + shadcn/ui + TailwindCSS + React Router + React Query + Zod  
-**Backend Stack:** Spring Boot 4.0 + Java 21 + MongoDB + JWT authentication
+**Backend Stack:** Spring Boot 4.x + Java 17/21 + MongoDB Atlas (no JWT in current backend; admin is via header key)
 
 ## Architecture & Data Flow
 
 ### Frontend (React)
-- **Auth System** (`src/pages/Auth.tsx`): Email/password signup & signin via Spring Boot API with Zod validation
-- **Dashboard** (`src/pages/Dashboard.tsx`): Role-based UI hub with tabs for verify, vehicles, analytics, user management
-- **Verify RC** (`src/pages/Verify.tsx`): Search vehicles by RC number and perform fraud checks
-- **Vehicles/Analytics/AdminUsers** (`src/pages/`): Role-gated pages for viewing data
-
-**Authentication Flow:**
-1. User signs up/in via `/api/auth/signup` or `/api/auth/signin`
-2. Backend returns JWT token + user object with `role` field
-3. Frontend stores in localStorage: `authToken` + `user` (JSON stringified)
-4. Protected pages check token on mount; redirect to `/auth` if missing
+- Routing in `frontend/src/App.tsx` with pages in `frontend/src/pages/` (`Index`, `Verify`, `Vehicles`, `RcDetail`, `TransferOwnership`, `Dashboard`, `Analytics`, `AdminUsers`, `Auth`, `NotFound`).
+- API client centralized in `frontend/src/lib/api.ts` targeting `http://localhost:8080`.
+- UI components from `frontend/src/components/ui/*` (shadcn/radix) — do not edit generated primitives.
+- Styles and theme tokens in `frontend/src/index.css` and `tailwind.config.ts`.
 
 ### Backend (Spring Boot)
-- **API Base URL**: `http://localhost:8081`
-- **Entities** (`SmartVehicle/src/main/java/com/vehicle/SmartVehicle/entity/`):
-  - `User.java`: User with email, password, role
-  - `Vehicle.java`: RC records with status, insurance/PUC validity dates
-  - `FraudFlag.java`: Fraud risk details
-  - `Verification.java`: Audit trail of verifications
+- Entrypoint: `backend/src/main/java/com/SmartVehicle/backend/BackendApplication.java`.
+- Packages: `config/`, `controller/`, `exception/`, `model/`, `repository/`, `service/` under `backend/src/main/java/com/SmartVehicle/backend/`.
+- Config: `backend/src/main/resources/application.properties`.
+- Server port: `8080`.
+- MongoDB: `spring.mongodb.uri` and `spring.mongodb.database`.
+- Admin key: `admin.secret.key` config; pass via `X-ADMIN-KEY` request header for privileged endpoints.
 
-- **Controllers**:
-  - `AuthController.java`: `/api/auth/signup`, `/api/auth/signin`, `/api/auth/logout`, `/api/auth/me`
-  - `VehicleController.java`: `/api/vehicles/search`, `/api/vehicles/fraud-check`, `/api/vehicles`, `/api/vehicles/{id}`
+## API Surface (Current)
 
-**Database:** MongoDB with collections for users, vehicles, fraud_flags, verifications
+Base URL: `http://localhost:8080`
+
+- Public RC endpoints (no auth):
+  - `GET /api/rc` → list all RCs
+  - `GET /api/rc/{id}` → get RC by id
+  - `GET /api/rc/search?rcNumber=...` → search RC by number
+
+- Admin RC endpoints (require header `X-ADMIN-KEY`):
+  - `POST /api/rc` → create RC
+  - `PUT /api/rc/{id}` → update RC
+  - `DELETE /api/rc/{id}` → remove RC
+
+Note: Auth endpoints (`/api/auth/*`) are not implemented in current backend. `frontend/src/pages/Auth.tsx` may include placeholder UI/validation; do not wire to non-existent APIs.
+
+## Frontend Conventions
+
+- Centralized API client: `frontend/src/lib/api.ts`.
+  - Set `API_BASE_URL` to `http://localhost:8080`.
+  - Use `X-ADMIN-KEY` for admin mutations: create/update/delete.
+- Forms: use Zod for validation; dispatch toast via `sonner` for async errors.
+- Routing: add routes before the catch-all `"*"` route in `App.tsx`.
+- Avoid direct edits in `components/ui/*` (generated shadcn components).
 
 ## Development Workflows
 
-### Frontend Setup & Running
-```bash
-npm install          # Install deps
-npm run dev         # Dev server (port 5173)
-npm run build       # Prod build (outputs dist/)
-npm run lint        # ESLint check
+### Frontend
+```powershell
+Push-Location "c:\Users\rohit\OneDrive\Desktop\study\projects\rc-shield-main\frontend"
+npm install
+npm run dev
+Pop-Location
 ```
 
-### Backend Setup & Running
-```bash
-cd SmartVehicle
-mvn clean install   # Build with Maven
-mvn spring-boot:run # Runs on port 8081
+### Backend
+```powershell
+Push-Location "c:\Users\rohit\OneDrive\Desktop\study\projects\rc-shield-main\backend"
+./mvnw clean install
+./mvnw spring-boot:run
+Pop-Location
 ```
 
-**Key Backend Config** (`SmartVehicle/src/main/resources/application.properties`):
-- `server.port=8081`
-- `spring.data.mongodb.uri=<MongoDB Atlas connection>`
-- `jwt.secret=<HS512 key, min 64 chars>`
-- `jwt.expiration=604800000` (7 days in ms)
+Backend runs on `http://localhost:8080`.
 
-### Environment Setup
-Frontend uses Vite defaults (no `.env` file needed for local development). Backend MongoDB URI and JWT secret are in `application.properties`.
+## Key Backend Config (`backend/src/main/resources/application.properties`)
+- `server.port=8080`
+- `spring.mongodb.uri=<MongoDB Atlas connection>`
+- `spring.mongodb.database=vehicledb`
+- `spring.mongodb.auto-index-creation=true`
+- `admin.secret.key=<your_admin_key>`
+- `spring.jackson.default-property-inclusion=non_null`
 
-### Path Aliases
-`@/*` maps to `src/*` (tsconfig.json). Always use `@/` for imports in React code.
+## Troubleshooting
+- Backend fails to start (Exit Code 1):
+  - Verify MongoDB URI and database exist; ensure network access/allowlist.
+  - Check port `8080` availability; if busy, change `server.port` and update `API_BASE_URL` in `api.ts`.
+  - Confirm `admin.secret.key` is set; admin endpoints compare header value.
+- API 404/500:
+  - Inspect `backend/src/main/java/com/SmartVehicle/backend/controller/` for endpoint mappings.
+- CORS issues:
+  - Add/verify a CORS config in `config/` to allow frontend origin (5173).
+- Styles not applying:
+  - Confirm Tailwind content paths in `tailwind.config.ts` include your files.
 
-## Project Conventions & Patterns
+## Pathing & Imports
+No `@/*` alias is configured by default; use relative imports like `import { apiClient } from "./lib/api"` or adjust `tsconfig.json` if you add a path alias.
 
-### API Client Pattern
-File: `src/lib/api.ts` centralizes all backend calls:
-```tsx
-const API_BASE_URL = "http://localhost:8081";
-
-export const apiClient = {
-  auth: {
-    signUp: async (email, password, fullName) => { /* POST /api/auth/signup */ },
-    signIn: async (email, password) => { /* POST /api/auth/signin */ },
-  },
-  vehicles: {
-    search: async (rcNumber) => { /* GET /api/vehicles/search?rcNumber=... */ },
-    performFraudChecks: async (vehicleId) => { /* POST /api/vehicles/fraud-check */ },
-  },
-};
-```
-Import: `import { apiClient } from "@/lib/api"`
-
-### Authentication in Protected Pages
-Pattern (see `Dashboard.tsx`, `Verify.tsx`):
-```tsx
-useEffect(() => {
-  const checkAuth = () => {
-    const token = localStorage.getItem("authToken");
-    const userData = localStorage.getItem("user");
-    if (!token || !userData) {
-      navigate("/auth");
-      return;
-    }
-    const user = JSON.parse(userData);
-    setUserRole(user.role || "public");
-  };
-  checkAuth();
-}, [navigate]);
-```
-
-**Key Roles:** `'public'` | `'buyer'` | `'police'` | `'rto_admin'`
-- Frontend conditionally renders tabs: police/RTO see vehicles, analytics, admin tabs
-- Backend enforces permissions via role check in controllers
-
-### Form Validation
-Use **Zod** schemas (example from `Auth.tsx`):
-```tsx
-const authSchema = z.object({
-  email: z.string().email("Invalid email").max(255),
-  password: z.string().min(6, "Min 6 chars").max(100),
-});
-// Catch ZodError separately from fetch errors
-try {
-  const validated = authSchema.parse(formData);
-} catch (error: any) {
-  if (error instanceof z.ZodError) {
-    toast.error(error.errors[0].message);
-  }
-}
-```
-
-### Toast Notifications
-Use **Sonner** from `import { toast } from "sonner"`:
-```tsx
-toast.success("Action completed!");
-toast.error("Something went wrong");
-```
-All async operations (API calls) should dispatch toast in catch blocks.
-
-### Styling System
-- **Color tokens** in `src/index.css` as HSL custom properties: `--primary`, `--secondary`, `--success`, `--warning`, `--destructive`
-- **Tailwind extends** via `tailwind.config.ts`: custom colors (`primary`, `success`, `sidebar`), gradients (`bg-gradient-hero`), shadows
-- All component colors use HSL for dark mode compatibility
-- Example: `<Button className="bg-primary text-primary-foreground">` (auto-applies HSL values)
-
-### Conditional UI by Role
-Dashboard example (role-gated tabs):
-```tsx
-{(userRole === "rto_admin" || userRole === "police") && (
-  <TabsTrigger value="vehicles">
-    <Database className="h-4 w-4 mr-2" />
-    Vehicles
-  </TabsTrigger>
-)}
-```
-
-## Integration Points
-
-### React Router Configuration
-File: `src/App.tsx` defines all routes. **Add routes BEFORE the catch-all `"*"` route:**
-```tsx
-<Routes>
-  <Route path="/" element={<Index />} />
-  <Route path="/auth" element={<Auth />} />
-  <Route path="/dashboard" element={<Dashboard />} />
-  {/* ADD CUSTOM ROUTES HERE, BEFORE "*" */}
-  <Route path="*" element={<NotFound />} />
-</Routes>
-```
-
-### Component Libraries
-- **shadcn/ui** (`src/components/ui/`): Auto-generated Radix UI primitives - do not edit directly
-- **Lucide React**: Icons (imported from `lucide-react`)
-- **React Hook Form** + **Zod**: Form handling + validation
-- **React Query** (`@tanstack/react-query`): Already in App via `QueryClientProvider`, available for async state
-
-## Critical Files & Roles
-| File | Purpose |
-|------|---------|
-| `src/App.tsx` | Route definitions, QueryClient provider |
-| `src/lib/api.ts` | Centralized API client for Spring Boot backend |
-| `src/pages/Auth.tsx` | Signup/signin with JWT token storage |
-| `src/pages/Dashboard.tsx` | Template for role-based UI rendering & auth checks |
-| `src/pages/Verify.tsx` | Vehicle search & fraud check workflow |
-| `tailwind.config.ts` | Design tokens, custom theme, gradients |
-| `src/index.css` | HSL color variables |
-| `SmartVehicle/pom.xml` | Java dependencies (Spring Boot, MongoDB, JWT) |
-| `SmartVehicle/src/main/java/com/vehicle/SmartVehicle/controller/` | API endpoints |
-
-## Debugging Tips
-- **Auth fails**: Check localStorage has both `authToken` and `user` keys; verify Spring Boot is running on port 8081
-- **API 404/500**: Check `SmartVehicle/src/main/java/com/vehicle/SmartVehicle/controller/` for endpoint definitions
-- **Styles not applying**: Verify Tailwind content paths in `tailwind.config.ts` include your file
-- **MongoDB connection error**: Check `application.properties` MongoDB URI is correct and cluster is accessible
-- **CORS issues**: May need CORS filter in Spring Boot if frontend is on different origin
-- **Port conflicts**: Frontend defaults to 5173; backend to 8081. Use `--port` flag if needed
+## Notes
+- This repo branch (`noauth`) uses admin key header flow rather than JWT. If you add auth, document new endpoints and storage (`authToken` and `user`) and update `api.ts` accordingly.

@@ -18,10 +18,10 @@ interface VehicleData {
   engineNumber: string;
   vehicleMake: string;
   vehicleModel: string;
-  vehicleYear: number;
-  registrationDate: string;
+  vehicleYear: number | string;
+  registrationDate: string | null;
   registeredState: string;
-  status: string;
+  status: string; // derived from registrationInfo.active
   insuranceValidUntil: string | null;
   pucValidUntil: string | null;
 }
@@ -61,21 +61,45 @@ const Verify = () => {
     setFraudChecks([]);
 
     try {
-      // Fetch vehicle data
-      const vehicle = await apiClient.vehicles.search(rcNumber);
+      // Fetch RC data from backend and map to UI model
+      const rc = await apiClient.rc.search(rcNumber);
 
-      if (vehicle.error) {
-        toast.error(vehicle.error);
+      if ((rc as any)?.error) {
+        toast.error((rc as any).error);
         setLoading(false);
         return;
       }
 
-      setVehicleData(vehicle);
+      const mapped: VehicleData = {
+        id: rc.id,
+        rcNumber: rc.rcNumber,
+        ownerName: rc.owner?.name || "N/A",
+        chassisNumber: rc.chassisNumber || rc.vehicleInfo?.chassisNumber || "N/A",
+        engineNumber: rc.engineNumber || rc.vehicleInfo?.engineNumber || "N/A",
+        vehicleMake: rc.vehicleInfo?.make || "N/A",
+        vehicleModel: rc.vehicleInfo?.model || "N/A",
+        vehicleYear: rc.vehicleInfo?.manufactureYear ?? "N/A",
+        registrationDate: rc.registrationInfo?.registrationDate || null,
+        registeredState: rc.registrationState || rc.vehicleInfo?.registrationState || "N/A",
+        status: rc.registrationInfo?.active ? "active" : "inactive",
+        insuranceValidUntil: rc.insurance?.validTill || null,
+        pucValidUntil: rc.puc?.validTill || null,
+      };
 
-      // Perform fraud checks
-      const fraudResponse = await apiClient.vehicles.performFraudChecks(vehicle.id);
-      setFraudChecks(fraudResponse.fraudChecks);
-      setFraudScore(fraudResponse.fraudScore);
+      setVehicleData(mapped);
+
+      // Fraud logic: treat stolen or suspicious as fraud indicators
+      const isStolen = !!rc.stolen;
+      const isSuspicious = !!rc.suspicious;
+      const checks: FraudCheck[] = [];
+      if (isStolen) {
+        checks.push({ type: "Stolen Vehicle", message: "This RC is marked as stolen.", severity: "high" });
+      }
+      if (isSuspicious) {
+        checks.push({ type: "Suspicious Activity", message: "This RC has suspicious flags.", severity: isStolen ? "high" : "medium" });
+      }
+      setFraudChecks(checks);
+      setFraudScore(checks.length ? (isStolen ? 1 : 0.6) : 0);
 
       toast.success("Verification complete");
     } catch (error: any) {
