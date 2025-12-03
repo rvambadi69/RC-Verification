@@ -30,6 +30,7 @@ public class Rc {
     // Fraud/status flags moved to root per new format
     private Boolean stolen;
     private Boolean suspicious;
+    private Integer verified; // Number of times this RC has been verified
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -74,8 +75,12 @@ public class Rc {
     public Boolean getStolen() { return stolen; }
     public void setStolen(Boolean stolen) { this.stolen = stolen; }
 
+
     public Boolean getSuspicious() { return suspicious; }
     public void setSuspicious(Boolean suspicious) { this.suspicious = suspicious; }
+
+    public Integer getVerified() { return verified; }
+    public void setVerified(Integer verified) { this.verified = verified; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

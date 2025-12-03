@@ -54,6 +54,14 @@ public class RcServiceImpl implements RcService {
     public Rc searchByRcNumber(String rcNumber) {
         Rc found = repo.findByRcNumber(rcNumber);
         rcSearchCounter.increment();
+        if (found != null) {
+            if (found.getVerified() == null) {
+                found.setVerified(1);
+            } else {
+                found.setVerified(found.getVerified() + 1);
+            }
+            repo.save(found);
+        }
         return found;
     }
 

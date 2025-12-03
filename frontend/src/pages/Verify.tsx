@@ -41,13 +41,7 @@ const Verify = () => {
   const [fraudScore, setFraudScore] = useState(0);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        navigate("/auth");
-      }
-    };
-    checkAuth();
+    // Auth check removed: no /auth route or backend auth in this project
   }, [navigate]);
 
   const handleVerify = async () => {
